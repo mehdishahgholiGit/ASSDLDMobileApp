@@ -1,0 +1,26 @@
+﻿# Android / Gradle
+.gradle/
+**/build/
+**/.gradle/
+
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Local configuration
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Kotlin
+.kotlin/
+
+# Temporary files
+*.log
