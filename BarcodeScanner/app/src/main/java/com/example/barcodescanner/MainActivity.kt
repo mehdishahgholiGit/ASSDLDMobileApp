@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
+import android.util.Size
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -27,8 +28,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var cameraExecutor: ExecutorService
     private val scanAdapter = ScanAdapter()
-
-    /** Dedupe key ("FORMAT:value") -> prevents the same code being added every frame it's in view. */
     private val seenKeys = HashSet<String>()
 
     private val requestPermissionLauncher =
@@ -71,7 +70,7 @@ class MainActivity : AppCompatActivity() {
             val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
-              it.setSurfaceProvider(binding.previewView.surfaceProvider)
+                it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
 
             val analyzer = BarcodeAnalyzer { barcodes ->
@@ -79,6 +78,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val imageAnalysis = ImageAnalysis.Builder()
+                .setTargetResolution(Size(720, 1280))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also { it.setAnalyzer(cameraExecutor, analyzer) }
@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
             if (seenKeys.add(key)) {
                 val timestamp = DateFormat.format("yyyy-MM-dd HH:mm:ss", Date()).toString()
                 scanAdapter.addItem(ScanRecord(value, barcode.formatName, timestamp))
+                Toast.makeText(this, "${barcode.formatName}: $value", Toast.LENGTH_SHORT).show()
                 added = true
             }
         }
