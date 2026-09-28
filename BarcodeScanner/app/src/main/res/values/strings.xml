@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Barcode Scanner</string>
+    <string name="app_name">ASSDLD</string>
     <string name="camera_permission_required">Camera permission is required to scan barcodes.</string>
     <string name="camera_start_failed">Could not start camera: %1$s</string>
     <string name="scanned_count">Scanned: %1$d</string>
@@ -10,5 +10,8 @@
     <string name="send_via">Send CSV via…</string>
     <string name="btn_clear">Clear</string>
     <string name="btn_export">Export &amp; Email CSV</string>
-    <string name="hint_point_camera">Point the camera at a QR or 2D barcode</string>
+    <string name="btn_scan">Scan</string>
+    <string name="scanning">Scanning…</string>
+    <string name="no_barcode_found">No barcode found, try again.</string>
+    <string name="hint_point_camera">Point the camera at a barcode, then tap Scan</string>
 </resources>
