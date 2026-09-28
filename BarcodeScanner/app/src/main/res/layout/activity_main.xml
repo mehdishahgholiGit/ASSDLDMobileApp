@@ -22,6 +22,16 @@
         android:textSize="13sp"
         android:textColor="#666666" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnScan"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:text="@string/btn_scan"
+        android:textSize="18sp"
+        app:backgroundTint="#8A001D" />
+
     <TextView
         android:id="@+id/tvCount"
         android:layout_width="match_parent"
@@ -29,7 +39,7 @@
         android:text="@string/scanned_count"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:paddingTop="4dp"
+        android:paddingTop="8dp"
         android:paddingBottom="4dp"
         android:textStyle="bold" />
 
