@@ -9,26 +9,14 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 
-/** Simple carrier so the rest of the app never touches ML Kit's Barcode class directly. */
 data class ScannedBarcode(val rawValue: String?, val formatName: String)
 
-/**
- * CameraX ImageAnalysis.Analyzer that runs each camera frame through ML Kit's on-device
- * barcode scanner, restricted to QR Code plus the common 2D symbologies (Data Matrix,
- * Aztec, PDF417). Add Barcode.FORMAT_* constants below if you also need 1D formats
- * such as CODE_128 or EAN_13.
- */
 class BarcodeAnalyzer(
     private val onBarcodesDetected: (List<ScannedBarcode>) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     private val options = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(
-            Barcode.FORMAT_QR_CODE,
-            Barcode.FORMAT_DATA_MATRIX,
-            Barcode.FORMAT_AZTEC,
-            Barcode.FORMAT_PDF417
-        )
+        .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
         .build()
 
     private val scanner = BarcodeScanning.getClient(options)
@@ -44,18 +32,15 @@ class BarcodeAnalyzer(
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
-                if (barcodes.isNotEmpty()) {
-                    onBarcodesDetected(
-                        barcodes.mapNotNull { barcode ->
-                            barcode.rawValue?.let {
-                                ScannedBarcode(it, formatName(barcode.format))
-                            }
-                        }
-                    )
+                val results = barcodes.mapNotNull { barcode ->
+                    val value = barcode.rawValue ?: barcode.displayValue
+                    value?.let { ScannedBarcode(it, formatName(barcode.format)) }
+                }
+                if (results.isNotEmpty()) {
+                    onBarcodesDetected(results)
                 }
             }
             .addOnCompleteListener {
-                // Must always close the proxy or the camera pipeline stalls.
                 imageProxy.close()
             }
     }
@@ -65,6 +50,15 @@ class BarcodeAnalyzer(
         Barcode.FORMAT_DATA_MATRIX -> "DATA_MATRIX"
         Barcode.FORMAT_AZTEC -> "AZTEC"
         Barcode.FORMAT_PDF417 -> "PDF417"
-        else -> "UNKNOWN"
+        Barcode.FORMAT_CODE_128 -> "CODE_128"
+        Barcode.FORMAT_CODE_39 -> "CODE_39"
+        Barcode.FORMAT_CODE_93 -> "CODE_93"
+        Barcode.FORMAT_CODABAR -> "CODABAR"
+        Barcode.FORMAT_EAN_13 -> "EAN_13"
+        Barcode.FORMAT_EAN_8 -> "EAN_8"
+        Barcode.FORMAT_ITF -> "ITF"
+        Barcode.FORMAT_UPC_A -> "UPC_A"
+        Barcode.FORMAT_UPC_E -> "UPC_E"
+        else -> "OTHER"
     }
 }
