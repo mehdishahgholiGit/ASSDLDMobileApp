@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.format.DateFormat
 import android.util.Size
 import android.widget.Toast
@@ -28,7 +30,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var cameraExecutor: ExecutorService
     private val scanAdapter = ScanAdapter()
-    private val seenKeys = HashSet<String>()
+
+    // Scanning happens only after the user taps the Scan button.
+    private var scanArmed = false
+    private val handler = Handler(Looper.getMainLooper())
+    private val scanTimeout = Runnable {
+        if (scanArmed) {
+            disarmScan()
+            Toast.makeText(this, getString(R.string.no_barcode_found), Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -48,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerScans.adapter = scanAdapter
         binding.tvCount.text = getString(R.string.scanned_count, 0)
 
+        binding.btnScan.setOnClickListener { armScan() }
         binding.btnExportEmail.setOnClickListener { exportAndEmail() }
         binding.btnClear.setOnClickListener { clearScans() }
 
@@ -63,6 +75,21 @@ class MainActivity : AppCompatActivity() {
     private fun hasCameraPermission() = ContextCompat.checkSelfPermission(
         this, Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
+
+    private fun armScan() {
+        scanArmed = true
+        binding.btnScan.isEnabled = false
+        binding.btnScan.text = getString(R.string.scanning)
+        handler.removeCallbacks(scanTimeout)
+        handler.postDelayed(scanTimeout, 8000)
+    }
+
+    private fun disarmScan() {
+        scanArmed = false
+        handler.removeCallbacks(scanTimeout)
+        binding.btnScan.isEnabled = true
+        binding.btnScan.text = getString(R.string.btn_scan)
+    }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -95,25 +122,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleBarcodes(barcodes: List<ScannedBarcode>) {
-        var added = false
-        for (barcode in barcodes) {
-            val value = barcode.rawValue ?: continue
-            val key = "${barcode.formatName}:$value"
-            if (seenKeys.add(key)) {
-                val timestamp = DateFormat.format("yyyy-MM-dd HH:mm:ss", Date()).toString()
-                scanAdapter.addItem(ScanRecord(value, barcode.formatName, timestamp))
-                Toast.makeText(this, "${barcode.formatName}: $value", Toast.LENGTH_SHORT).show()
-                added = true
-            }
-        }
-        if (added) {
-            binding.recyclerScans.scrollToPosition(scanAdapter.itemCount - 1)
-            binding.tvCount.text = getString(R.string.scanned_count, scanAdapter.itemCount)
-        }
+        if (!scanArmed) return
+        val barcode = barcodes.firstOrNull { it.rawValue != null } ?: return
+        val value = barcode.rawValue ?: return
+
+        val timestamp = DateFormat.format("yyyy-MM-dd HH:mm:ss", Date()).toString()
+        scanAdapter.addItem(ScanRecord(value, barcode.formatName, timestamp))
+        binding.recyclerScans.scrollToPosition(scanAdapter.itemCount - 1)
+        binding.tvCount.text = getString(R.string.scanned_count, scanAdapter.itemCount)
+        Toast.makeText(this, "${barcode.formatName}: $value", Toast.LENGTH_SHORT).show()
+
+        disarmScan()
     }
 
     private fun clearScans() {
-        seenKeys.clear()
         scanAdapter.clearAll()
         binding.tvCount.text = getString(R.string.scanned_count, 0)
     }
@@ -149,6 +171,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(scanTimeout)
         cameraExecutor.shutdown()
     }
 }
