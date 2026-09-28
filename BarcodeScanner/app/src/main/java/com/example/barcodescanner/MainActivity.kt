@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
-                it.surfaceProvider = binding.previewView.surfaceProvider
+              it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
 
             val analyzer = BarcodeAnalyzer { barcodes ->
